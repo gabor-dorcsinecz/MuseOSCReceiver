@@ -11,9 +11,20 @@ class SCodec1 extends AnyWordSpec with should.Matchers {
   "SCodec" should {
 
     "encode int8" in {
-      val encoded = int8.encode(42)
+      val encoded = int8.encode(42)  //Successful(BitVector(8 bits, 0x2a))
       encoded shouldBe Successful(BitVector(42))
     }
+
+    "encode int8 > 127" in {
+      val encoded = int8.encode(200)  //Successful(BitVector(8 bits, 0x2a))
+      encoded shouldBe Failure(Err("200 is greater than maximum value 127 for 8-bit signed integer"))
+    }
+
+    "encode uint8 > 127" in {
+      val encoded = uint8.encode(200)  //Successful(BitVector(8 bits, 0xc8))
+      encoded shouldBe Successful(BitVector(200))
+    }
+
 
     "fail encoding int8 with big numbers" in {
       val encoded = int8.encode(420)
@@ -34,6 +45,13 @@ class SCodec1 extends AnyWordSpec with should.Matchers {
       val fsb = fixedSizeBytes(3, utf8) //  Codec[String]
       val decoded = fsb.decode(hex"4a6f65".bits)
       decoded shouldBe Successful(DecodeResult("Joe", BitVector.empty))
+    }
+
+    "decode string with " in {
+      val vsb = variableSizeBytes(int8,utf8)
+      val encoded = vsb.encode("Joe")  //Successful(BitVector(32 bits, 0x034a6f65))  Here we have 0x03 extra, to store the length
+      val decoded = vsb.decode(encoded.require)
+      decoded.require.value shouldBe "Joe"
     }
 
     "encode and decode int32 to BigDecimal" in {

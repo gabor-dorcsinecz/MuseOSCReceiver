@@ -15,6 +15,8 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
       val accountCodec = (int32 :: stringCodec :: bigDecimalCodec).as[Account]
       val account = Account(1000, "Pista", BigDecimal(2000))
       val encodedAccount = accountCodec.encode(account)
+      println(encodedAccount.require.bytes.toSeq.map(a => a.toHexString))
+      println(encodedAccount.require.bytes.toSeq.map(a => a.toChar))
       val decodecAccount = accountCodec.decode(encodedAccount.require)
       decodecAccount.require.value shouldBe account
     }
