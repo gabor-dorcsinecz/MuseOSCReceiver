@@ -9,8 +9,8 @@ import matchers._
 
 class FirstSpec extends AnyWordSpec  with should.Matchers {
 
-  "This" should {
-    "Work" in {
+//  "This" should {
+//    "Work" in {
 //      implicit val context: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
 //      val port = 9999
 //      Blocker[IO].use { blocker =>
@@ -35,8 +35,8 @@ class FirstSpec extends AnyWordSpec  with should.Matchers {
 //      val client = new OSCClient()
 //      client.run(Main.serverPort).unsafeRunSync()
 //      Thread.sleep(3000)
-    }
-  }
+//    }
+//  }
 
 
 
