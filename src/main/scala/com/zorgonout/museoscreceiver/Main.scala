@@ -3,34 +3,41 @@ package com.zorgonout.museoscreceiver
 import java.net.InetSocketAddress
 
 import cats.effect.{Blocker, Concurrent, ContextShift, ExitCode, IO, IOApp}
+import com.zorgonout.museoscreceiver.Main.serverPort
 import fs2.Stream
-import fs2.io.udp.SocketGroup
+import fs2.io.udp.{Packet, Socket, SocketGroup}
 
 
-object Main extends IOApp{
+object Main extends IOApp {
 
   val serverPort = 8000
 
   def run(args: List[String]): IO[ExitCode] = {
+    serverUDPSocket()
+  }
+
+  def serverUDPSocket(): IO[ExitCode] = {
+    println("Starting")
     Blocker[IO]
       .use { blocker =>
         SocketGroup[IO](blocker).use { socketGroup =>
-          println("BBBBBBBBBBBB")
           val cc = implicitly[Concurrent[IO]]
           val cs = implicitly[ContextShift[IO]]
-          println("Concurrent: " + cc)
-          println("ContextShift: " + cs)
-          val sgr = socketGroup.open(new InetSocketAddress(serverPort))(cc,cs)
-          Stream.resource(sgr).flatMap{ socket =>
-            socket.reads().map{a => println(">> " + a.bytes.map(b => b.toChar));a}
+          val sgr = socketGroup.open(new InetSocketAddress(serverPort))(cc, cs)
+          Stream.resource(sgr).flatMap { socket =>
+            handlePacketStream(socket.reads())
           }.compile.drain
-//          Stream.resource(socketGroup.open(new InetSocketAddress(serverPort))).flatMap { socket =>
-//            socket.reads()
-//          }.compile.drain
-        //IO.unit
         }
-        }
+      }
       .as(ExitCode.Success)
   }
 
+  def handlePacketStream[F[_]](packets: Stream[F, Packet]): Stream[F, Packet] = {
+    //packets.map { a => println(">> " + a.bytes.map(b => String.format("%02x", Byte.box(b)))/*.map(b => b.toChar)*/); a }
+    //packets.map { a => println(">> " + a.bytes);a}
+    packets.map { a => println(">> " + a.bytes.map(b => String.format("%02x", Byte.box(b))).toList.mkString); a }
+  }
+
 }
+
+

@@ -1,5 +1,4 @@
 val Fs2Version = "2.4.0"
-val LogbackVersion = "1.2.3"
 
 lazy val root = (project in file("."))
   .settings(
@@ -10,7 +9,9 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "co.fs2" %% "fs2-core" % Fs2Version,
       "co.fs2" %% "fs2-io" % Fs2Version,
-      "ch.qos.logback" % "logback-classic" % LogbackVersion,
+      "org.scodec" %% "scodec-core" % "1.11.7",
+      "org.scodec" %% "scodec-stream" % "2.0.0",
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.scalatest" %% "scalatest" % "3.2.0" % "test"
     ),
     //    addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
