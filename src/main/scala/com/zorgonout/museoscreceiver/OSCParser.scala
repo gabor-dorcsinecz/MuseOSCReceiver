@@ -26,7 +26,7 @@ object OSC {
   //case class OSCMessage(addressPattern: String, typeTag: String, arguments: String) extends OSCPackage
   //case class OSCBundle(timeTag: String, elements: String*) extends OSCPackage
 
-  case class OSCMessage(data: ByteVector) extends OSCPackage
+  case class OSCMessage(address: String, data: ByteVector) extends OSCPackage
 
   case class OSCBundle(bundleName: String, timeTag: LocalDateTime, data: OSCMessage) extends OSCPackage
 
@@ -39,11 +39,12 @@ object OSC {
       LocalDateTime.ofEpochSecond(secondsSince1970, fraction, ZoneOffset.UTC)
   } { x => ((x.getSecond + 2208988800L).toInt, x.getNano) }
 
-  val elementCodec:Codec[OSCMessage] = variableSizeBytes(int32, bytes)
-    .xmapc[OSCMessage](a => OSCMessage(a))(m => m.data)
-
+  val elementCodec: Codec[OSCMessage] = variableSizeBytes(int32, bytes)
+    .xmapc { bv => messageCodec.decode(bv.bits).require.value } { msg => messageCodec.encode(msg).require.bytes } //TODO this looks horrible
+  //.narrowc(a => messageCodec.decode(a.bits).getOrElse())(m => messageCodec.encode(m).getOrElse(OSCMessage("",ByteVector.empty)))
   //.exmapc(a => messageCodec.decode(a.bits))(b => messageCodec.encode(b.value).map(_.bytes))
   //.xmapc(a => messageCodec.decode(a.bits).require)(b => messageCodec.encode(b.value).require.bytes)
+  //.hlist :+ messageCodec
   val bundleSize = int32
 
   val bundleCodec: Codec[OSCBundle] = (
@@ -62,8 +63,9 @@ object OSC {
   //  val messageCodec:Codec[OSCMessage] = (
   //    fixedSizeBytes(10,ascii) ::
   //  ).as[OSCMessage]
-  //  val messageCodec:Codec[OSCMessage] = (
-  //    fixedSizeBytes(12, utf8)
-  //  ).as[OSCMessage]
+  val messageCodec: Codec[OSCMessage] = (
+    fixedSizeBytes(12, utf8) ::
+      bytes
+    ).as[OSCMessage]
 
 }
