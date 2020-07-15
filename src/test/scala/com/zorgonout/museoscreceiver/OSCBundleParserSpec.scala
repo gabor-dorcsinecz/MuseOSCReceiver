@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import com.zorgonout.museoscreceiver.OSC
 import com.zorgonout.museoscreceiver.OSC.{OSCBundle, OSCMessage}
 
-class OSCParserSpec extends AnyWordSpec with should.Matchers {
+class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
   "it" should {
     "Parse one message" in {
       val oneChunk = MuseIncomingOSC.example1(0)
@@ -19,7 +19,8 @@ class OSCParserSpec extends AnyWordSpec with should.Matchers {
       val bundle = decoded.require.value.asInstanceOf[OSCBundle]
       bundle.bundleName.init shouldBe "bundle"
       bundle.timeTag.toString shouldBe "2020-07-10T17:46:40.240518168"
-      //bundle.data.getClass shouldBe classOf[OSCMessage]
+      bundle.data.getClass shouldBe classOf[OSCMessage]
+      //bundle.data.
     }
   }
 }

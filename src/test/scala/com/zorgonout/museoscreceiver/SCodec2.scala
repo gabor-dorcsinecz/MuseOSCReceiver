@@ -2,10 +2,21 @@ package com.zorgonout.museoscreceiver
 
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpec
+import scodec.bits.ByteVector
 import scodec.{Codec, DecodeResult}
 import scodec.codecs._
 
 class SCodec2 extends AnyWordSpec with should.Matchers {
+
+  "Codec creation" should {
+    "be able to combine codecs" in {
+      val x: Codec[(Int, ByteVector)] = uint8 flatZip { numBytes => bytes(numBytes) }
+      val variableLength: Codec[ByteVector] = x.xmap[ByteVector]({ case (_, bv) => bv }, bv => (bv.size.toInt, bv))
+      val encoded = variableLength.encode(ByteVector("Amina".getBytes("ASCII")))
+      encoded.require.bytes.length shouldBe 6  //Because of the size added at the front
+    }
+  }
+
   "case classes" should {
     "be encoded and decoded" in {
       case class Account(accountNumber:Int, name:String, balance:BigDecimal)

@@ -28,7 +28,7 @@ object OSC {
 
   case class OSCMessage(data: ByteVector) extends OSCPackage
 
-  case class OSCBundle(bundleName: String, timeTag: LocalDateTime, data: ByteVector) extends OSCPackage
+  case class OSCBundle(bundleName: String, timeTag: LocalDateTime, data: OSCMessage) extends OSCPackage
 
   val packageTypeCodec = enumerated(uint8, OSCPackegeType)
   val timeTagSeconds = uint32
@@ -39,7 +39,11 @@ object OSC {
       LocalDateTime.ofEpochSecond(secondsSince1970, fraction, ZoneOffset.UTC)
   } { x => ((x.getSecond + 2208988800L).toInt, x.getNano) }
 
-  val elementCodec = variableSizeBytes(int32, bytes)
+  val elementCodec:Codec[OSCMessage] = variableSizeBytes(int32, bytes)
+    .xmapc[OSCMessage](a => OSCMessage(a))(m => m.data)
+
+  //.exmapc(a => messageCodec.decode(a.bits))(b => messageCodec.encode(b.value).map(_.bytes))
+  //.xmapc(a => messageCodec.decode(a.bits).require)(b => messageCodec.encode(b.value).require.bytes)
   val bundleSize = int32
 
   val bundleCodec: Codec[OSCBundle] = (
@@ -48,14 +52,18 @@ object OSC {
       elementCodec
     ).as[OSCBundle]
 
-  //  val messageCodec:Codec[OSCMessage] = (
-  //    fixedSizeBytes(10,ascii) ::
-  //
-  //  ).as[OSCMessage]
 
   val packageCodec = discriminated[OSCPackage]
     .by(packageTypeCodec)
-    .|(OSCPackegeType.MESSAGE){case m:OSCMessage => m.data}(a => OSCMessage(a))(bytes)
+    //.|(OSCPackegeType.MESSAGE){case m:OSCMessage => m}(identity)(bytes)
     .|(OSCPackegeType.BUNDLE) { case m: OSCBundle => m }(identity)(bundleCodec)
+
+
+  //  val messageCodec:Codec[OSCMessage] = (
+  //    fixedSizeBytes(10,ascii) ::
+  //  ).as[OSCMessage]
+  //  val messageCodec:Codec[OSCMessage] = (
+  //    fixedSizeBytes(12, utf8)
+  //  ).as[OSCMessage]
 
 }
