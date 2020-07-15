@@ -47,9 +47,9 @@ class SCodec1 extends AnyWordSpec with should.Matchers {
       decoded shouldBe Successful(DecodeResult("Joe", BitVector.empty))
     }
 
-    "decode string with " in {
+    "decode string with variableSizeBytes" in {
       val vsb = variableSizeBytes(int8,utf8)
-      val encoded = vsb.encode("Joe")  //Successful(BitVector(32 bits, 0x034a6f65))  Here we have 0x03 extra, to store the length
+      val encoded = vsb.encode("Joe")   //Successful(BitVector(32 bits, 0x034a6f65))  Here we have 0x03 extra, to store the length
       val decoded = vsb.decode(encoded.require)
       decoded.require.value shouldBe "Joe"
     }
@@ -61,11 +61,6 @@ class SCodec1 extends AnyWordSpec with should.Matchers {
       val decoded = bigDecimalCodec.decode(encoded.require)
       decoded shouldBe Successful(DecodeResult(80, BitVector.empty))
     }
-
-    //    "decode discriminator" in {
-    //      val x = discriminated
-    //    }
-
 
   }
 
