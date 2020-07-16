@@ -82,7 +82,7 @@ object OSC {
 }
 
 /**
- * Codec that searches for a charatcter in the ByteVector
+ * Codec that searches for a charatcter in the ByteVector and decodes only until then
  *
  * @param value Char to search for
  * @param codec Codec to use
@@ -105,25 +105,25 @@ case class TypeTagCodec() extends Codec[Seq[OSCType]] {
   override def encode(value: Seq[OSCType]): Attempt[BitVector] = Attempt.successful(BitVector.empty)
 
   override def decode(bits: BitVector): Attempt[DecodeResult[Seq[OSCType]]] = {
-    val byteVector = bits.bytes.tail //Drop the comma
+    val byteVector = bits.bytes.tail //Drop the comma, which marks the beginning of typetags
     val endOfOSCStringIndex = byteVector.indexOfSlice(ByteVector(0))
-    val roundedTo4Bytes = math.ceil((endOfOSCStringIndex + 1).toDouble / 4).toInt * 4 //how many bytes contain all typetags
+    val roundedTo4Bytes = math.ceil((endOfOSCStringIndex + 1).toDouble / 4).toInt * 4 //how many bytes contain all typetags (as they are padded with 0's until 32 bits)
     val (typeTags, data) = byteVector.splitAt(roundedTo4Bytes - 1)
-    val values = typeTag2Codec(typeTags.toSeq, data.toBitVector)
+    val values = decodeDataFromTypeTags(typeTags.toSeq, data.toBitVector)
     Attempt.successful(DecodeResult(values,BitVector.empty))
   }
 
 
-  final def typeTag2Codec(typeTags: Seq[Byte], data: BitVector): Seq[OSCType] = {
+  final def decodeDataFromTypeTags(typeTags: Seq[Byte], data: BitVector): Seq[OSCType] = {
     //println(s"typeTag2Codec  $typeTags    ###   $data")
     val cleanedTags = typeTags.filterNot(_ == 0)  //0's were just padding to 32 bits (OSCString)
     cleanedTags.headOption match {
       case Some('f') =>
         val x = float.decode(data)
-        OSCFloat(x.require.value) +: typeTag2Codec(cleanedTags.tail, x.require.remainder)
+        OSCFloat(x.require.value) +: decodeDataFromTypeTags(cleanedTags.tail, x.require.remainder)
       case Some('i') =>
         val x = int32.decode(data)
-        OSCInt(x.require.value) +: typeTag2Codec(cleanedTags.tail, x.require.remainder)
+        OSCInt(x.require.value) +: decodeDataFromTypeTags(cleanedTags.tail, x.require.remainder)
       case None => Nil
       case _ => println("Unknown"); Nil
     }
