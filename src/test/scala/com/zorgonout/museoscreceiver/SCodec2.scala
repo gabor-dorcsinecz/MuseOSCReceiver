@@ -129,7 +129,7 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
   "finder codec" should {
     "find commas" in {
       val encodedData = Chunk.byteVector(hex"2f6d7573652f6565670000002c666666660000004455d8f2445433d5445152e1444edb35")
-      val fc = new FinderCodec(',', ascii)
+      val fc = new FinderCodec(',')
       val decoded = fc.decode(encodedData.toBitVector)
       decoded.require.value.trim() shouldBe "/muse/eeg"
     }

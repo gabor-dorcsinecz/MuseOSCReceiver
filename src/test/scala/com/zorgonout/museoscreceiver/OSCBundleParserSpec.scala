@@ -20,7 +20,7 @@ class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
       bundle.bundleName.init shouldBe "bundle"
       bundle.timeTag.toString shouldBe "2020-07-10T17:46:40.240518168"
       bundle.data.getClass shouldBe classOf[OSCMessage]
-      bundle.data.address.trim() shouldBe "/muse/eeg"
+      bundle.data.address shouldBe "/muse/eeg"
     }
   }
 }

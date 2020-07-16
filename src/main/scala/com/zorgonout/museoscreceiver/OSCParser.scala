@@ -20,6 +20,16 @@ import scala.annotation.tailrec
 
 object OSC {
 
+  sealed trait OSCType
+
+  case class OSCInt(int: Int) extends OSCType
+
+  case class OSCFloat(float: Float) extends OSCType
+
+  case class OSCString(string: String) extends OSCType
+
+
+
   object OSCPackegeType extends Enumeration {
     val MESSAGE = Value('/'.toInt)
     val BUNDLE = Value('#'.toInt)
@@ -30,7 +40,7 @@ object OSC {
   //case class OSCMessage(addressPattern: String, typeTag: String, arguments: String) extends OSCPackage
   //case class OSCBundle(timeTag: String, elements: String*) extends OSCPackage
 
-  case class OSCMessage(address: String, data: ByteVector) extends OSCPackage
+  case class OSCMessage(address: String, data: Seq[OSCType]) extends OSCPackage
 
   case class OSCBundle(bundleName: String, timeTag: LocalDateTime, data: OSCMessage) extends OSCPackage
 
@@ -69,15 +79,10 @@ object OSC {
   //  ).as[OSCMessage]
   val messageCodec: Codec[OSCMessage] = (
 
-    FinderCodec(',', utf8) ::
-      bytes
+    FinderCodec(',') ::
+      TypeTagCodec()
     ).as[OSCMessage]
 
-
-  sealed trait OSCType
-  case class OSCInt(int:Int) extends OSCType
-  case class OSCFloat(float:Float) extends OSCType
-  case class OSCString(string:String) extends OSCType
 
 }
 
@@ -85,17 +90,15 @@ object OSC {
  * Codec that searches for a charatcter in the ByteVector and decodes only until then
  *
  * @param value Char to search for
- * @param codec Codec to use
- * @tparam A
  */
-case class FinderCodec[A](value: Char, codec: Codec[A]) extends Codec[A] {
+case class FinderCodec(value: Char) extends Codec[String] {
   override def sizeBound = SizeBound.unknown
 
-  override def encode(a: A) = Attempt.successful(BitVector.empty)
+  override def encode(a: String) = Attempt.successful(BitVector.empty)
 
-  override def decode(bv: BitVector): Attempt[DecodeResult[A]] = {
+  override def decode(bv: BitVector): Attempt[DecodeResult[String]] = {
     val indexOfSeparator = bv.bytes.indexOfSlice(ByteVector(value))
-    fixedSizeBytes(indexOfSeparator, codec).decode(bv)
+    fixedSizeBytes(indexOfSeparator, utf8).decode(bv).map(_.map(_.trim))
   }
 }
 
@@ -110,13 +113,13 @@ case class TypeTagCodec() extends Codec[Seq[OSCType]] {
     val roundedTo4Bytes = math.ceil((endOfOSCStringIndex + 1).toDouble / 4).toInt * 4 //how many bytes contain all typetags (as they are padded with 0's until 32 bits)
     val (typeTags, data) = byteVector.splitAt(roundedTo4Bytes - 1)
     val values = decodeDataFromTypeTags(typeTags.toSeq, data.toBitVector)
-    Attempt.successful(DecodeResult(values,BitVector.empty))
+    Attempt.successful(DecodeResult(values, BitVector.empty))
   }
 
 
   final def decodeDataFromTypeTags(typeTags: Seq[Byte], data: BitVector): Seq[OSCType] = {
     //println(s"typeTag2Codec  $typeTags    ###   $data")
-    val cleanedTags = typeTags.filterNot(_ == 0)  //0's were just padding to 32 bits (OSCString)
+    val cleanedTags = typeTags.filterNot(_ == 0) //0's were just padding to 32 bits (OSCString)
     cleanedTags.headOption match {
       case Some('f') =>
         val x = float.decode(data)
