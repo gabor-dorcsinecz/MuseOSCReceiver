@@ -2,7 +2,7 @@ package com.zorgonout.museoscreceiver
 
 import java.time.{LocalDateTime, ZoneOffset}
 
-import scodec.Codec
+import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 
@@ -64,8 +64,25 @@ object OSC {
   //    fixedSizeBytes(10,ascii) ::
   //  ).as[OSCMessage]
   val messageCodec: Codec[OSCMessage] = (
-    fixedSizeBytes(12, utf8) ::
+    //fixedSizeBytes(12, utf8) ::
+    FinderCodec(',', utf8) ::
       bytes
     ).as[OSCMessage]
 
+
+}
+
+/**
+ * Codec that searches for a charatcter in the ByteVector
+ * @param value Char to search for
+ * @param codec Codec to use
+ * @tparam A
+ */
+case class FinderCodec[A](value: Char,codec: Codec[A]) extends Codec[A] {
+  override def sizeBound = SizeBound.unknown
+  override def encode(a: A) = Attempt.successful(BitVector.empty)
+  override def decode(bv: BitVector) :Attempt[DecodeResult[A]]= {
+    val indexOfSeparator = bv.bytes.indexOfSlice(ByteVector(value))
+    fixedSizeBytes(indexOfSeparator, codec).decode(bv)
+  }
 }
