@@ -30,8 +30,8 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
       val accountCodec = (int32 :: stringCodec :: bigDecimalCodec).as[Account]
       val account = Account(1000, "Pista", BigDecimal(2000))
       val encodedAccount = accountCodec.encode(account)
-      println(encodedAccount.require.bytes.toSeq.map(a => a.toHexString))
-      println(encodedAccount.require.bytes.toSeq.map(a => a.toChar))
+      //println(encodedAccount.require.bytes.toSeq.map(a => a.toHexString))
+      //println(encodedAccount.require.bytes.toSeq.map(a => a.toChar))
       val decodecAccount = accountCodec.decode(encodedAccount.require)
       decodecAccount.require.value shouldBe account
     }
@@ -84,8 +84,8 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
         .typecase(true, bazEncoder.encodeOnly)
 
       //myEncoder.encode(Bar(3)) shouldBe Successful(BitVector(0x7))
-      println(myEncoder.encode(Bar(3)))
-      println(myEncoder.encode(Baz(3)))
+      //println(myEncoder.encode(Bar(3)))
+      //println(myEncoder.encode(Baz(3)))
 
     }
   }
@@ -111,18 +111,18 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
       val kc = new KeepingCodec(7)
       val aminaBV = BitVector("Amina".getBytes("UTF-8"))
       val encoded = kc.encode(aminaBV)
-      println(encoded.require.bytes)
+      //println(encoded.require.bytes)
       val decoded = kc.decode(encoded.require)
-      println(decoded.require.value.bytes)
+      //println(decoded.require.value.bytes)
       //println(new String(decoded.require.value.bytes))
       //TODO What's happening here, and why does this not work???
 
       //This is supposed to do the same
       val bitsCodec = bytes(3)
       val encoded2 = bitsCodec.encode(aminaBV.bytes)
-      println(encoded2)
+      //println(encoded2)
       val decoded2 = bitsCodec.decode(encoded.require)
-      println(decoded2)
+      //println(decoded2)
     }
   }
 

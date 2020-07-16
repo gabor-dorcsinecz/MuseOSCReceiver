@@ -1,9 +1,7 @@
 package com.zorgonout.museoscreceiver
 
-import fs2.Chunk.ByteVectorChunk
-import scodec.bits.ByteVector
-import scodec.bits._
 import fs2.Chunk
+import scodec.bits._
 
 object MuseIncomingOSC {
 

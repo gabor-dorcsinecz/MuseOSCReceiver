@@ -3,19 +3,18 @@ package com.zorgonout.museoscreceiver
 import java.time.{LocalDateTime, ZoneOffset}
 
 import com.zorgonout.museoscreceiver.OSC.{OSCFloat, OSCInt, OSCType}
-import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
-import shapeless.{HList, HNil}
+import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 
-import scala.annotation.tailrec
 
 /**
  * The Open Sound Control 1.0 Specification
  * Open Sound Control (OSC) is an open, transport-independent, message-based protocol developed
  * for communication among computers, sound synthesizers, and other multimedia devices.
  *
- * http://opensoundcontrol.org/spec-1_0
+ * Specification: http://opensoundcontrol.org/spec-1_0
+ * An implementation in swift: https://github.com/sammysmallman/OSCKit/tree/master/Sources/OSCKit
  */
 
 object OSC {
@@ -28,7 +27,7 @@ object OSC {
 
   case class OSCString(string: String) extends OSCType
 
-
+  //TODO Add TimeTag type and it's parser
 
   object OSCPackegeType extends Enumeration {
     val MESSAGE = Value('/'.toInt)
@@ -36,9 +35,6 @@ object OSC {
   }
 
   sealed trait OSCPackage
-
-  //case class OSCMessage(addressPattern: String, typeTag: String, arguments: String) extends OSCPackage
-  //case class OSCBundle(timeTag: String, elements: String*) extends OSCPackage
 
   case class OSCMessage(address: String, data: Seq[OSCType]) extends OSCPackage
 
@@ -75,11 +71,7 @@ object OSC {
     .|(OSCPackegeType.BUNDLE) { case m: OSCBundle => m }(identity)(bundleCodec)
 
 
-  //  val messageCodec:Codec[OSCMessage] = (
-  //    fixedSizeBytes(10,ascii) ::
-  //  ).as[OSCMessage]
   val messageCodec: Codec[OSCMessage] = (
-
     FinderCodec(',') ::
       TypeTagCodec()
     ).as[OSCMessage]
@@ -87,11 +79,7 @@ object OSC {
 
 }
 
-/**
- * Codec that searches for a charatcter in the ByteVector and decodes only until then
- *
- * @param value Char to search for
- */
+//Codec that searches for a charatcter in the ByteVector and decodes only until then
 case class FinderCodec(value: Char) extends Codec[String] {
   override def sizeBound = SizeBound.unknown
 
@@ -103,6 +91,7 @@ case class FinderCodec(value: Char) extends Codec[String] {
   }
 }
 
+// Codec that parses the type tags, and based on those tags, extracts the data
 case class TypeTagCodec() extends Codec[Seq[OSCType]] {
   override def sizeBound: SizeBound = SizeBound.unknown
 
@@ -128,8 +117,12 @@ case class TypeTagCodec() extends Codec[Seq[OSCType]] {
       case Some('i') =>
         val x = int32.decode(data)
         OSCInt(x.require.value) +: decodeDataFromTypeTags(cleanedTags.tail, x.require.remainder)
-      case None => Nil
-      case _ => println("Unknown"); Nil
+      //TODO add more types (like timetags and strings)
+      case None =>
+        Nil
+      case _ =>
+        println("Unknown")
+        Nil
     }
   }
 }
