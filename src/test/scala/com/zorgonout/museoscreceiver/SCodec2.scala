@@ -1,6 +1,6 @@
 package com.zorgonout.museoscreceiver
 
-import com.zorgonout.museoscreceiver.OSC.FinderCodec
+import com.zorgonout.museoscreceiver.OSC.OSCFloat
 import fs2.Chunk
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpec
@@ -127,11 +127,20 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
   }
 
   "finder codec" should {
-    "work" in {
+    "find commas" in {
       val encodedData = Chunk.byteVector(hex"2f6d7573652f6565670000002c666666660000004455d8f2445433d5445152e1444edb35")
-      val fc = new FinderCodec(',', bytes)
+      val fc = new FinderCodec(',', ascii)
       val decoded = fc.decode(encodedData.toBitVector)
-      println(decoded.require.value.toSeq.map(a => a.toChar))
+      decoded.require.value.trim() shouldBe "/muse/eeg"
+    }
+  }
+
+  "TypeTag codec" should {
+    "decode types and data" in {
+      val encodedData = Chunk.byteVector(hex"2c666666660000004455d8f2445433d5445152e1444edb35")
+      val ttc = TypeTagCodec()
+      val res = ttc.decode(encodedData.toBitVector)
+      res.require.value shouldBe List(OSCFloat(855.3898F), OSCFloat(848.8099F), OSCFloat(837.295F), OSCFloat(827.4251F))
     }
   }
 

@@ -2,9 +2,13 @@ package com.zorgonout.museoscreceiver
 
 import java.time.{LocalDateTime, ZoneOffset}
 
+import com.zorgonout.museoscreceiver.OSC.{OSCFloat, OSCInt, OSCType}
 import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
+import shapeless.{HList, HNil}
+
+import scala.annotation.tailrec
 
 /**
  * The Open Sound Control 1.0 Specification
@@ -64,25 +68,65 @@ object OSC {
   //    fixedSizeBytes(10,ascii) ::
   //  ).as[OSCMessage]
   val messageCodec: Codec[OSCMessage] = (
-    //fixedSizeBytes(12, utf8) ::
+
     FinderCodec(',', utf8) ::
       bytes
     ).as[OSCMessage]
 
 
+  sealed trait OSCType
+  case class OSCInt(int:Int) extends OSCType
+  case class OSCFloat(float:Float) extends OSCType
+  case class OSCString(string:String) extends OSCType
+
 }
 
 /**
  * Codec that searches for a charatcter in the ByteVector
+ *
  * @param value Char to search for
  * @param codec Codec to use
  * @tparam A
  */
-case class FinderCodec[A](value: Char,codec: Codec[A]) extends Codec[A] {
+case class FinderCodec[A](value: Char, codec: Codec[A]) extends Codec[A] {
   override def sizeBound = SizeBound.unknown
+
   override def encode(a: A) = Attempt.successful(BitVector.empty)
-  override def decode(bv: BitVector) :Attempt[DecodeResult[A]]= {
+
+  override def decode(bv: BitVector): Attempt[DecodeResult[A]] = {
     val indexOfSeparator = bv.bytes.indexOfSlice(ByteVector(value))
     fixedSizeBytes(indexOfSeparator, codec).decode(bv)
   }
 }
+
+case class TypeTagCodec() extends Codec[Seq[OSCType]] {
+  override def sizeBound: SizeBound = SizeBound.unknown
+
+  override def encode(value: Seq[OSCType]): Attempt[BitVector] = Attempt.successful(BitVector.empty)
+
+  override def decode(bits: BitVector): Attempt[DecodeResult[Seq[OSCType]]] = {
+    val byteVector = bits.bytes.tail //Drop the comma
+    val endOfOSCStringIndex = byteVector.indexOfSlice(ByteVector(0))
+    val roundedTo4Bytes = math.ceil((endOfOSCStringIndex + 1).toDouble / 4).toInt * 4 //how many bytes contain all typetags
+    val (typeTags, data) = byteVector.splitAt(roundedTo4Bytes - 1)
+    val values = typeTag2Codec(typeTags.toSeq, data.toBitVector)
+    Attempt.successful(DecodeResult(values,BitVector.empty))
+  }
+
+
+  final def typeTag2Codec(typeTags: Seq[Byte], data: BitVector): Seq[OSCType] = {
+    //println(s"typeTag2Codec  $typeTags    ###   $data")
+    val cleanedTags = typeTags.filterNot(_ == 0)  //0's were just padding to 32 bits (OSCString)
+    cleanedTags.headOption match {
+      case Some('f') =>
+        val x = float.decode(data)
+        OSCFloat(x.require.value) +: typeTag2Codec(cleanedTags.tail, x.require.remainder)
+      case Some('i') =>
+        val x = int32.decode(data)
+        OSCInt(x.require.value) +: typeTag2Codec(cleanedTags.tail, x.require.remainder)
+      case None => Nil
+      case _ => println("Unknown"); Nil
+    }
+  }
+}
+
