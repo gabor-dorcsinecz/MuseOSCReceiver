@@ -46,11 +46,12 @@ object OSC {
 
   val packageTypeCodec = enumerated(uint8, OSCPackegeType)
   val timeTagSeconds = uint32
-  val timeTagFraction = int32
+  val timeTagFraction = uint32
   val timeTagCodec = (timeTagSeconds ~ timeTagFraction).xmapc {
     case (secondsSince1900, fraction) =>
       val secondsSince1970 = secondsSince1900 - 2208988800L
-      LocalDateTime.ofEpochSecond(secondsSince1970, fraction, ZoneOffset.UTC)
+      val nanoSeconds = (fraction / 4.29497f).toInt  //TimeTag has ~200 picosecond accuracy on 32 bits you can store 4294967295 data, but only 999999999 allowed by java LocalDateTime
+      LocalDateTime.ofEpochSecond(secondsSince1970, nanoSeconds, ZoneOffset.UTC)
   } { x => ((x.getSecond + 2208988800L).toInt, x.getNano) }
 
   val elementCodec: Codec[OSCMessage] = variableSizeBytes(int32, bytes)
