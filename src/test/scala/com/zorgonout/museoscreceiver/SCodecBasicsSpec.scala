@@ -7,7 +7,7 @@ import scodec.{DecodeResult, Err, codecs}
 import scodec.bits._
 import scodec.codecs._
 
-class SCodec1 extends AnyWordSpec with should.Matchers {
+class SCodecBasicsSpec extends AnyWordSpec with should.Matchers {
   "SCodec" should {
 
     "encode int8" in {

@@ -10,7 +10,7 @@ import scodec.{Attempt, Codec, DecodeResult, Encoder, Err, SizeBound}
 import scodec.codecs._
 import scodec.bits._
 
-class SCodec2 extends AnyWordSpec with should.Matchers {
+class SCodecComplexSpec extends AnyWordSpec with should.Matchers {
 
   "Codec creation" should {
     "be able to combine codecs" in {
