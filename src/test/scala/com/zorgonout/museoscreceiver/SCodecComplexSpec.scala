@@ -63,42 +63,7 @@ class SCodecComplexSpec extends AnyWordSpec with should.Matchers {
       decoded.require.value shouldBe message
     }
   }
-
-  "Codec Creation" should {
-    "work" in {
-      class KeepingCodec(keep: Long) extends Codec[BitVector] {
-        override def sizeBound: SizeBound = SizeBound.unknown
-
-        override def encode(buffer: BitVector): Attempt[BitVector] =
-          Attempt.successful(buffer)
-
-        override def decode(buffer: BitVector): Attempt[DecodeResult[BitVector]] =
-          if (buffer.sizeGreaterThanOrEqual(keep)) {
-            val (res, remaining) = buffer.splitAt(buffer.size - keep)
-            Attempt.successful(DecodeResult(res, remaining))
-          } else {
-            Attempt.failure(Err.insufficientBits(keep, buffer.size))
-          }
-      }
-
-      val kc = new KeepingCodec(7)
-      val aminaBV = BitVector("Amina".getBytes("UTF-8"))
-      val encoded = kc.encode(aminaBV)
-      //println(encoded.require.bytes)
-      val decoded = kc.decode(encoded.require)
-      //println(decoded.require.value.bytes)
-      //println(new String(decoded.require.value.bytes))
-      //TODO What's happening here, and why does this not work???
-
-      //This is supposed to do the same
-      val bitsCodec = bytes(3)
-      val encoded2 = bitsCodec.encode(aminaBV.bytes)
-      //println(encoded2)
-      val decoded2 = bitsCodec.decode(encoded.require)
-      //println(decoded2)
-    }
-  }
-
+  
   "finder codec" should {
     "find commas" in {
       val encodedData = Chunk.byteVector(hex"2f6d7573652f6565670000002c666666660000004455d8f2445433d5445152e1444edb35")
@@ -110,7 +75,7 @@ class SCodecComplexSpec extends AnyWordSpec with should.Matchers {
 
   "TypeTag codec" should {
     "decode types and data" in {
-      val encodedData = Chunk.byteVector(hex"2c666666660000004455d8f2445433d5445152e1444edb35")
+      val encodedData = Chunk.byteVector(hex"2c666666660000004455d8f2445433d5445152e1444edb35") //ASCII: , f f f f_padd_ float1 float2 float3 float4
       val ttc = TypeTagCodec()
       val res = ttc.decode(encodedData.toBitVector)
       res.require.value shouldBe List(OSCFloat(855.3898F), OSCFloat(848.8099F), OSCFloat(837.295F), OSCFloat(827.4251F))

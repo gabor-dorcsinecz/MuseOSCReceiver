@@ -120,7 +120,7 @@ case class TypeTagCodec() extends Codec[Seq[OSCType]] {
       case None =>
         Nil
       case _ =>
-        println("Unknown")
+        println("Unknown/Unimplemented OSC Type Tag")
         Nil
     }
   }
