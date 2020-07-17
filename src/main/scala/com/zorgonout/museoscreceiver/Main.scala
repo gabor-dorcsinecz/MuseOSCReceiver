@@ -37,7 +37,7 @@ object Main extends IOApp {
     //packets.map { a => println(">> " + a.bytes);a}
     //println("handlePacketStream================")
     //packets.map { a => println(">> " + a.bytes.map(b => String.format("%02x", Byte.box(b))).toList.mkString); a }
-    packets.map { a=> println(OSC.packageCodec.decode(a.bytes.toBitVector));a}
+    packets.map { a=> println(OSC.oscPackageCodec.decode(a.bytes.toBitVector));a}
 //    packets.map { a =>
 //      println(">> " + a.bytes.map(b => String.format("%02x", Byte.box(b))).toList.mkString)
 //      println(OSC.packageCodec.decode(a.bytes.toBitVector))

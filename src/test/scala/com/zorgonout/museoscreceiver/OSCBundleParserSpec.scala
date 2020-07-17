@@ -12,7 +12,7 @@ class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
       val chunk = MuseIncomingOSC.example1(0)
       //println(chunk.map(a => a.toHexString))
       //println(chunk.map(a => a.toChar))
-      val decoded = OSC.packageCodec.decode(chunk.toBitVector)
+      val decoded = OSC.oscPackageCodec.decode(chunk.toBitVector)
       //println(decoded)
       decoded.isSuccessful shouldBe true
       decoded.require.value.getClass shouldBe classOf[OSCBundle]
@@ -27,12 +27,12 @@ class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
 
   "Parse invalid nanosecond" in {
     val packet = Chunk.byteVector(hex"2362756e646c6500e2badf3c3eb851eb000000242f6d7573652f6565670000002c666666660000004447dd7844522570445225704442ee20")
-    val decoded = OSC.packageCodec.decode(packet.toBitVector)
+    val decoded = OSC.oscPackageCodec.decode(packet.toBitVector)
   }
 
   "Parse all messages" in {
     MuseIncomingOSC.example1.foreach{ chunk =>
-      val decoded = OSC.packageCodec.decode(chunk.toBitVector)
+      val decoded = OSC.oscPackageCodec.decode(chunk.toBitVector)
       decoded.isSuccessful shouldBe true
       decoded.require.value.getClass shouldBe classOf[OSCBundle]
       val bundle = decoded.require.value.asInstanceOf[OSCBundle]

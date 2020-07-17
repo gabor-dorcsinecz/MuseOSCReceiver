@@ -50,31 +50,25 @@ object OSC {
       LocalDateTime.ofEpochSecond(secondsSince1970, nanoSeconds, ZoneOffset.UTC)
   } { x => ((x.getSecond + 2208988800L).toInt, x.getNano) }
 
-  val elementCodec: Codec[OSCMessage] = variableSizeBytes(int32, bytes)
-    .xmapc { bv => messageCodec.decode(bv.bits).require.value } { msg => messageCodec.encode(msg).require.bytes } //TODO this looks horrible
-  //.narrowc(a => messageCodec.decode(a.bits).getOrElse())(m => messageCodec.encode(m).getOrElse(OSCMessage("",ByteVector.empty)))
-  //.exmapc(a => messageCodec.decode(a.bits))(b => messageCodec.encode(b.value).map(_.bytes))
-  //.xmapc(a => messageCodec.decode(a.bits).require)(b => messageCodec.encode(b.value).require.bytes)
-  //.hlist :+ messageCodec
-  val bundleSize = int32
+  val oscMessageCodec: Codec[OSCMessage] = (
+    FinderCodec(',') ::
+      TypeTagCodec()
+    ).as[OSCMessage]
 
-  val bundleCodec: Codec[OSCBundle] = (
+  val elementCodec: Codec[OSCMessage] = variableSizeBytes(int32, oscMessageCodec)  //TODO this could be a bundle or a message (should not be fixed as message)
+
+  val oscBundleCodec: Codec[OSCBundle] = (
     fixedSizeBytes(7, utf8) ::
       timeTagCodec ::
       elementCodec
     ).as[OSCBundle]
 
 
-  val packageCodec = discriminated[OSCPackage]
+  val oscPackageCodec = discriminated[OSCPackage]
     .by(packageTypeCodec)
-    //.|(OSCPackegeType.MESSAGE){case m:OSCMessage => m}(identity)(bytes)
-    .|(OSCPackegeType.BUNDLE) { case m: OSCBundle => m }(identity)(bundleCodec)
+    .|(OSCPackegeType.MESSAGE){case m:OSCMessage => m}(identity)(oscMessageCodec)
+    .|(OSCPackegeType.BUNDLE) { case m: OSCBundle => m }(identity)(oscBundleCodec)
 
-
-  val messageCodec: Codec[OSCMessage] = (
-    FinderCodec(',') ::
-      TypeTagCodec()
-    ).as[OSCMessage]
 
 
 }
@@ -91,7 +85,12 @@ case class FinderCodec(value: Char) extends Codec[String] {
   }
 }
 
-// Codec that parses the type tags, and based on those tags, extracts the data
+/**
+ * Codec that parses the type tags, and based on those tags, extracts the data.
+ * For example here is a part of an OSC message, the type tags (4 floats) and the data part
+ * 2c666666660000004455d8f2445433d5445152e1444edb35
+ *  , f f f f_padd_ float1 float2 float3 float4
+ */
 case class TypeTagCodec() extends Codec[Seq[OSCType]] {
   override def sizeBound: SizeBound = SizeBound.unknown
 
@@ -111,10 +110,10 @@ case class TypeTagCodec() extends Codec[Seq[OSCType]] {
     //println(s"typeTag2Codec  $typeTags    ###   $data")
     val cleanedTags = typeTags.filterNot(_ == 0) //0's were just padding to 32 bits (OSCString)
     cleanedTags.headOption match {
-      case Some('f') =>
+      case Some('f') =>  //The data should contain a float
         val x = float.decode(data)
         OSCFloat(x.require.value) +: decodeDataFromTypeTags(cleanedTags.tail, x.require.remainder)
-      case Some('i') =>
+      case Some('i') => //The data should contain a int32
         val x = int32.decode(data)
         OSCInt(x.require.value) +: decodeDataFromTypeTags(cleanedTags.tail, x.require.remainder)
       //TODO add more types (like timetags and strings)

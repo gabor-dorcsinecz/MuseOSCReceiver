@@ -62,34 +62,7 @@ class SCodec2 extends AnyWordSpec with should.Matchers {
       val decoded = versionCodec.decode(encoded.require) //Successful(DecodeResult(Message(Message),BitVector(empty)))
       decoded.require.value shouldBe message
     }
-
-    "discriminate on boolean" in {
-      sealed trait Foo
-      case class Bar(value: Int) extends Foo
-      case class Baz(value: Long) extends Foo
-
-      // Manually creating an encoder (though this is often not necessary)
-      val barEncoder: Encoder[Bar] = new Encoder[Bar] {
-        def sizeBound = SizeBound.unknown
-
-        def encode(a: Bar) = Attempt.successful(BitVector.high(a.value))
-      }
-
-      // Creating an encoder from a different encoder/codec
-      val bazEncoder: Encoder[Baz] = long(64).contramap((b: Baz) => b.value)
-
-      // Using discriminated to create an encoder from other encoders
-      val myEncoder: Encoder[Foo] = discriminated[Foo].by(bool)
-        .typecase(false, barEncoder.encodeOnly)
-        .typecase(true, bazEncoder.encodeOnly)
-
-      //myEncoder.encode(Bar(3)) shouldBe Successful(BitVector(0x7))
-      //println(myEncoder.encode(Bar(3)))
-      //println(myEncoder.encode(Baz(3)))
-
-    }
   }
-
 
   "Codec Creation" should {
     "work" in {
