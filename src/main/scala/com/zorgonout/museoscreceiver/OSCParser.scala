@@ -38,7 +38,7 @@ object OSC {
 
   case class OSCMessage(address: String, data: Seq[OSCType]) extends OSCPackage
 
-  case class OSCBundle(bundleName: String, timeTag: LocalDateTime, data: OSCMessage) extends OSCPackage  //TODO can also contain another bundle instead of a message
+  case class OSCBundle(timeTag: LocalDateTime, data: OSCMessage) extends OSCPackage  //TODO can also contain another bundle instead of a message
 
   val packageTypeCodec = enumerated(uint8, OSCPackegeType)
   val timeTagSeconds = uint32
@@ -58,7 +58,7 @@ object OSC {
   val elementCodec: Codec[OSCMessage] = variableSizeBytes(int32, oscMessageCodec)  //TODO this could be a bundle or a message (should not be fixed as message)x
 
   val oscBundleCodec: Codec[OSCBundle] = (
-    fixedSizeBytes(7, utf8) ::
+    ignore(7*8) ::
       timeTagCodec ::
       elementCodec
     ).as[OSCBundle]

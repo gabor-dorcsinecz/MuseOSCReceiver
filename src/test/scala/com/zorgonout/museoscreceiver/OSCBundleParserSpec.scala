@@ -10,14 +10,13 @@ class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
   "it" should {
     "Parse one message" in {
       val chunk = MuseIncomingOSC.example1(0)
-      //println(chunk.map(a => a.toHexString))
-      //println(chunk.map(a => a.toChar))
+      println(chunk.map(a => a.toHexString))
+      println(chunk.map(a => a.toChar))
       val decoded = OSC.oscPackageCodec.decode(chunk.toBitVector)
-      //println(decoded)
+      println(decoded)
       decoded.isSuccessful shouldBe true
       decoded.require.value.getClass shouldBe classOf[OSCBundle]
       val bundle = decoded.require.value.asInstanceOf[OSCBundle]
-      bundle.bundleName.init shouldBe "bundle"
       bundle.timeTag.toString shouldBe "2020-07-10T17:46:40.055999968"
       bundle.data.getClass shouldBe classOf[OSCMessage]
       bundle.data.address shouldBe "/muse/eeg"
@@ -36,7 +35,7 @@ class OSCBundleParserSpec extends AnyWordSpec with should.Matchers {
       decoded.isSuccessful shouldBe true
       decoded.require.value.getClass shouldBe classOf[OSCBundle]
       val bundle = decoded.require.value.asInstanceOf[OSCBundle]
-      bundle.bundleName.init shouldBe "bundle"
+      println(bundle)
     }
   }
 }
