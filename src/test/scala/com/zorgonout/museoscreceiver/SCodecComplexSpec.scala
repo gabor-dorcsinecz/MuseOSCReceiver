@@ -77,8 +77,8 @@ class SCodecComplexSpec extends AnyWordSpec with should.Matchers {
     "decode types and data" in {
       val encodedData = Chunk.byteVector(hex"2c666666660000004455d8f2445433d5445152e1444edb35") //ASCII: , f f f f_padd_ float1 float2 float3 float4
       val ttc = TypeTagCodec()
-      val res = ttc.decode(encodedData.toBitVector)
-      res.require.value shouldBe List(OSCFloat(855.3898F), OSCFloat(848.8099F), OSCFloat(837.295F), OSCFloat(827.4251F))
+      val decoded = ttc.decode(encodedData.toBitVector)
+      decoded.require.value shouldBe List(OSCFloat(855.3898F), OSCFloat(848.8099F), OSCFloat(837.295F), OSCFloat(827.4251F))
     }
   }
 
