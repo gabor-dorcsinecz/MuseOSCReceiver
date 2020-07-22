@@ -10,23 +10,22 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 
-import scala.concurrent.ExecutionContext.global
+import scala.concurrent.ExecutionContext
 
 
 class Webserver(val port:Int) {
+
   def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-    for {
-      client <- BlazeClientBuilder[F](global).stream
+    val httpApp = (WebserverRoutes.helloWorldRoutes[F]()).orNotFound
+    val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      httpApp = (WebserverRoutes.helloWorldRoutes[F]()).orNotFound
-      finalHttpApp = Logger.httpApp(true, true)(httpApp)
-
-      exitCode <- BlazeServerBuilder.apply[F](global)
-        .bindHttp(port, "0.0.0.0")
-        .withHttpApp(finalHttpApp)
-        .serve
-    } yield exitCode
-  }.drain
+    BlazeServerBuilder
+      .apply[F](ExecutionContext.global)
+      .bindHttp(port, "0.0.0.0")
+      .withHttpApp(finalHttpApp)
+      .serve
+      .drain
+  }
 }
 
 
