@@ -1,6 +1,6 @@
 package com.zorgonout.museoscreceiver
 
-import cats.effect.{ConcurrentEffect, ContextShift, Sync, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, Sync, Timer}
 import cats.implicits._
 import fs2.Stream
 import org.http4s.HttpRoutes
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 
 class Webserver(val port:Int) {
 
-  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, ExitCode] = {
     val httpApp = (WebserverRoutes.helloWorldRoutes[F]()).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
@@ -24,7 +24,7 @@ class Webserver(val port:Int) {
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(finalHttpApp)
       .serve
-      .drain
+      //.drain
   }
 }
 
