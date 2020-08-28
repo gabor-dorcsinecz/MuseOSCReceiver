@@ -8,6 +8,7 @@ lazy val root = (project in file("."))
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.13.3",
     libraryDependencies ++= Seq(
+      "us.hebi.matlab.mat" % "mfl-core" % "0.5.6",
       "co.fs2" %% "fs2-core" % Fs2Version,
       "co.fs2" %% "fs2-io" % Fs2Version,
       "org.scodec" %% "scodec-core" % "1.11.7",
